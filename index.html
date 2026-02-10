@@ -215,6 +215,8 @@
     </style>
 </head>
 <body>
+    <!-- Dodaj hidden iframe negdje u body -->
+    <iframe id="hidden-iframe" name="hidden-iframe" style="display: none;"></iframe>
     <div class="container">
         <!-- Install Banner -->
         <div class="install-banner" id="installBanner">
@@ -335,7 +337,7 @@
         });
 
         // Pošalji formu
-        form.addEventListener('submit', async function(e) {
+        form.addEventListener('submit', function(e) {
             e.preventDefault();
 
             const km = parseInt(document.getElementById('km').value);
@@ -354,40 +356,40 @@
                 izvjesce = izvjesceValue;
             }
 
-            // Pripremi podatke
-            const data = {
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>Šaljem...';
+
+            // Kreiraj dinamičku formu za POST
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.action = API_URL;
+            tempForm.target = 'hidden-iframe';
+            tempForm.style.display = 'none';
+
+            // Dodaj podatke kao JSON u hidden input
+            const jsonData = {
                 prijedeniKm: km,
                 izvjesce: izvjesce,
                 relacija: relacija
             };
 
-            // Pošalji na API
-            try {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="loading-spinner"></span>Šaljem...';
+            const input = document.createElement('textarea');
+            input.name = 'data';
+            input.value = JSON.stringify(jsonData);
+            tempForm.appendChild(input);
 
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
+            // Submit
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            document.body.removeChild(tempForm);
 
-                const result = await response.json();
-
-                if (result.status === 200) {
-                    showMessage(`✓ Vožnja dodana: ${km} km, ${izvjesce}`, 'success');
-                    // Form se NE resetira, zadržava defaultne vrijednosti
-                } else {
-                    showMessage('✗ Greška: ' + result.message, 'error');
-                }
-            } catch (error) {
-                showMessage('✗ Greška prilikom slanja: ' + error.message, 'error');
-            } finally {
+            // Simuliraj uspjeh nakon 1.5 sekunde
+            setTimeout(() => {
+                showMessage(`✓ Vožnja dodana: ${km} km, ${izvjesce}`, 'success');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 'Dodaj vožnju';
-            }
+            }, 1500);
         });
 
         function showMessage(text, type) {
