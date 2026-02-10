@@ -3,7 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loko-vožnje</title>
+    <title>🚗 Loko-vožnje</title>
+    
+    <!-- PWA Meta tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Brz unos službenih vožnji">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Loko-vožnje">
+    
+    <!-- Favicon (🚗 emoji kao SVG) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
     <style>
         * {
             margin: 0;
@@ -42,6 +57,33 @@
             font-size: 14px;
             text-align: center;
             margin-bottom: 32px;
+        }
+
+        .install-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .install-banner.show {
+            display: flex;
+        }
+
+        .install-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         .form-group {
@@ -89,7 +131,7 @@
             margin-bottom: 6px;
         }
 
-        button {
+        button[type="submit"] {
             width: 100%;
             padding: 16px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -103,16 +145,16 @@
             margin-top: 8px;
         }
 
-        button:hover {
+        button[type="submit"]:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
 
-        button:active {
+        button[type="submit"]:active {
             transform: translateY(0);
         }
 
-        button:disabled {
+        button[type="submit"]:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
@@ -166,7 +208,7 @@
                 font-size: 24px;
             }
 
-            button {
+            button[type="submit"] {
                 padding: 14px;
             }
         }
@@ -174,6 +216,12 @@
 </head>
 <body>
     <div class="container">
+        <!-- Install Banner -->
+        <div class="install-banner" id="installBanner">
+            <span>📱 Instaliraj kao aplikaciju</span>
+            <button class="install-btn" id="installButton">Instaliraj</button>
+        </div>
+
         <h1>🚗 Loko-vožnje</h1>
         <p class="subtitle">Brz unos službenih vožnji</p>
 
@@ -183,7 +231,7 @@
                 <select id="km" required>
                     <option value="">Odaberi km...</option>
                     <option value="5">5 km</option>
-                    <option value="10">10 km</option>
+                    <option value="10" selected>10 km</option>
                     <option value="15">15 km</option>
                     <option value="20">20 km</option>
                     <option value="25">25 km</option>
@@ -199,7 +247,7 @@
                 <label for="izvjesce">Izvješće</label>
                 <select id="izvjesce" required>
                     <option value="">Odaberi izvješće...</option>
-                    <option value="prijevoz do ureda">Prijevoz do ureda</option>
+                    <option value="prijevoz do ureda" selected>Prijevoz do ureda</option>
                     <option value="posjeta klijentu">Posjeta klijentu</option>
                     <option value="službeni put">Službeni put</option>
                     <option value="prijevoz na sastanak">Prijevoz na sastanak</option>
@@ -216,7 +264,7 @@
                 <label for="relacija">Relacija</label>
                 <select id="relacija" required>
                     <option value="">Odaberi relaciju...</option>
-                    <option value="RIJEKA">Rijeka</option>
+                    <option value="RIJEKA" selected>Rijeka</option>
                     <option value="ZAGREB">Zagreb</option>
                     <option value="SPLIT">Split</option>
                     <option value="OPATIJA">Opatija</option>
@@ -243,6 +291,36 @@
         const customInput = document.getElementById('customIzvjesce');
         const submitBtn = document.getElementById('submitBtn');
         const messageDiv = document.getElementById('message');
+
+        // PWA Install
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installButton = document.getElementById('installButton');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.classList.add('show');
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.classList.remove('show');
+            }
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('Service Worker registriran'))
+                    .catch(err => console.log('Service Worker greška:', err));
+            });
+        }
 
         // Prikaži/sakrij custom input
         izvjesceSelect.addEventListener('change', function() {
@@ -300,8 +378,7 @@
 
                 if (result.status === 200) {
                     showMessage(`✓ Vožnja dodana: ${km} km, ${izvjesce}`, 'success');
-                    form.reset();
-                    customWrapper.classList.remove('show');
+                    // Form se NE resetira, zadržava defaultne vrijednosti
                 } else {
                     showMessage('✗ Greška: ' + result.message, 'error');
                 }
