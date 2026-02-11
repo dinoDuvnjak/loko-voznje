@@ -1,7 +1,9 @@
-const CACHE_NAME = 'loko-voznje-v2';
+const CACHE_NAME = 'loko-voznje-v3';
 const urlsToCache = [
   './index.html',
   './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
   './'
 ];
 
